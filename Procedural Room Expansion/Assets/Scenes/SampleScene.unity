@@ -224,6 +224,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parentObject: {fileID: 1478710156}
+  prefab: {fileID: 7870745781602707517, guid: 6db4f06087af44b2ba3fcd9bf039a025, type: 3}
+  baseNumberOfRooms: 150
+  radius: 18
+  maxRoomWidth: 8
+  maxRoomHeight: 8
 --- !u!4 &1478710158
 Transform:
   m_ObjectHideFlags: 0
