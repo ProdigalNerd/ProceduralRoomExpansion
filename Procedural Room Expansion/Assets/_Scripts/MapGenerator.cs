@@ -13,6 +13,10 @@ public class MapGenerator : MonoBehaviour
     public int maxRoomHeight = 8;
 
     private List<GameObject> roomList = new List<GameObject>();
+    private List<GameObject> processedRooms = new List<GameObject>();
+    private int numFinished = 0;
+    private bool isSettingUp = true;
+    private bool roomsPositioned = false;
 
     // Start is called before the first frame update
     void Start()
@@ -26,12 +30,38 @@ public class MapGenerator : MonoBehaviour
         }
 
         // Quads should automatically spread out
+
+        // TODO: Need to find out when all rooms are "in place"
+        Debug.Log("hit");
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if (isSettingUp)
+        {
+            foreach (GameObject room in roomList)
+            {
+                bool finished = room.GetComponent<ColliderBasedReposition>().doneMoving;
+
+                if(finished){
+                    processedRooms.Add(room);
+                    roomList.Remove(room);
+                    break;
+                }
+            }
+
+            if(numFinished == roomList.Count) {
+                isSettingUp = false;
+            }
+        }
+        else {
+            if(!roomsPositioned) {
+                roomsPositioned = true;
+
+                FindMainRooms();
+            }
+        }
     }
 
     private Vector2 getRandomPointInCircle(float rad) {
@@ -47,21 +77,8 @@ public class MapGenerator : MonoBehaviour
         return room;
     }
 
-    private char CalculateHigherDistanceFromCenter(Vector2 box) {
-        float distX = Mathf.Abs(box.x);
-        float distY = Mathf.Abs(box.y);
-
-        if(distX > distY) {
-            return 'x';
-        }
-
-        return 'y';
-    }
-
-    private void TestCreatePlane() {
-        GameObject testobj = Instantiate(prefab, parentObject.transform) as GameObject;
-        testobj.transform.position = new Vector2(0, 0);
-        testobj.transform.localScale += new Vector3(1, 1, 0);
-        testobj.transform.parent = parentObject.transform;
+    private void FindMainRooms() {
+        // Locate the "main rooms" to be used as a foundation
+        Debug.Log("Find Main Rooms");
     }
 }
