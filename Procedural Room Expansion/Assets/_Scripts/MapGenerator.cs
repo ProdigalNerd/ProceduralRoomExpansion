@@ -11,6 +11,8 @@ public class MapGenerator : MonoBehaviour
     public int radius = 25;
     public int maxRoomWidth = 8;
     public int maxRoomHeight = 8;
+    public int mainRoomMinWidth = 4;
+    public int mainRoomMinHeight = 4;
 
     private List<GameObject> roomList = new List<GameObject>();
     private List<GameObject> processedRooms = new List<GameObject>();
@@ -30,9 +32,6 @@ public class MapGenerator : MonoBehaviour
         }
 
         // Quads should automatically spread out
-
-        // TODO: Need to find out when all rooms are "in place"
-        Debug.Log("hit");
     }
 
     // Update is called once per frame
@@ -80,5 +79,11 @@ public class MapGenerator : MonoBehaviour
     private void FindMainRooms() {
         // Locate the "main rooms" to be used as a foundation
         Debug.Log("Find Main Rooms");
+        foreach(GameObject room in processedRooms) {
+            if (room.transform.localScale.x >= mainRoomMinWidth && room.transform.localScale.y >= mainRoomMinHeight)
+            {
+                room.GetComponent<MeshRenderer>().material.color = Color.yellow;
+            }
+        }
     }
 }
