@@ -277,7 +277,7 @@ MonoBehaviour:
   parentObject: {fileID: 1894102198}
   prefab: {fileID: 2981297502955594221, guid: 9b5e6516932214fef9907fa5ec3792ba, type: 3}
   minRadius: 5
-  maxRadius: 10
+  maxRadius: 50
   radiusStepSize: 5
   roomsPerStep: 10
   maxRoomWidth: 8

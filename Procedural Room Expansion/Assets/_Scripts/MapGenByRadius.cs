@@ -25,7 +25,7 @@ public class MapGenByRadius : MonoBehaviour
             }
             else
             {
-                GenerateRoomsForOutterCircles(minRadius, maxRadius, roomsPerStep);
+                GenerateRoomsForOutterCircles(previousRadius, radius, roomsPerStep);
             }
 
             previousRadius = radius;
@@ -93,6 +93,10 @@ public class MapGenByRadius : MonoBehaviour
     {
         List<GameObject> rmList = new List<GameObject>();
 
+        Debug.Log("Min Radius: " + minRadius);
+        Debug.Log("Max Radius: " + maxRadius);
+        Debug.Log("Num Rooms: " + numRooms);
+
         for(int x = 0; x < numRooms; x++)
         {
             Vector2 point = GetRandomPointInCircle(maxRadius);
@@ -133,15 +137,14 @@ public class MapGenByRadius : MonoBehaviour
                 float newX = minRadius + (innerRatio * (maxRadius - minRadius));
                 float newY = slope * (newX);
 
-                Vector2 newPoint = new Vector2(newX, newY);
-
-                // need to calculate a random width and height 
-                float w = UnityEngine.Random.Range(1, maxRoomWidth);
-                float h = UnityEngine.Random.Range(1, maxRoomHeight);
-
-                rmList.Add(CreateQuadAtCoordinate(newPoint, w, h));
+                point = new Vector2(newX, newY);
             }
 
+            // need to calculate a random width and height 
+            float w = UnityEngine.Random.Range(1, maxRoomWidth);
+            float h = UnityEngine.Random.Range(1, maxRoomHeight);
+
+            rmList.Add(CreateQuadAtCoordinate(point, w, h));
         }
 
         // Return results
