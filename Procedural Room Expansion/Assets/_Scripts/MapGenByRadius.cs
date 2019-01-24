@@ -64,7 +64,7 @@ public class MapGenByRadius : MonoBehaviour
         room.transform.position = roomLoc;
         room.transform.localScale += new Vector3(width, height, 0);
         // room.GetComponent<BoxCollider>().size = new Vector3(width, height, 0.01f);
-        room.transform.parent = parentObject.transform;
+        room.transform.SetParent(parentObject.transform);
         return room;
     }
 
@@ -93,10 +93,6 @@ public class MapGenByRadius : MonoBehaviour
     {
         List<GameObject> rmList = new List<GameObject>();
 
-        Debug.Log("Min Radius: " + minRadius);
-        Debug.Log("Max Radius: " + maxRadius);
-        Debug.Log("Num Rooms: " + numRooms);
-
         for(int x = 0; x < numRooms; x++)
         {
             Vector2 point = GetRandomPointInCircle(maxRadius);
@@ -104,6 +100,7 @@ public class MapGenByRadius : MonoBehaviour
             // if the point is within the inner circle
             if (IsPointWithinCircle(minRadius, point))
             {
+                Debug.Log("Original Point: " + point);
                 // find the slope of the line that connects the point to the center of the map (0,0)
                 // since center point is always 0,0 then we can assume that the slope is always rise / run or y / x
                 float slope = point.y / point.x;
@@ -123,13 +120,16 @@ public class MapGenByRadius : MonoBehaviour
                 // Get the distance from the intersections to the random point that was created
                 // The shortest distance is the direction we need to move the point
                 Vector2[] intersections = CalculatePointsUsingDeltas(deltax, deltay, deltar, deltap, minRadius);
-                float d1 = CalculateDistanceBetweeinTwoPoints(intersections[0], point);
-                float d2 = CalculateDistanceBetweeinTwoPoints(intersections[1], point);
 
                 // set the direction vector based on shortest distance
                 Vector2 targetDirection = intersections[0];
-                if (d2 < d1) targetDirection = intersections[1];
+                if((int)Mathf.Sign(intersections[1].x) == (int)Mathf.Sign(point.x) 
+                    && (int)Mathf.Sign(intersections[1].y) == (int)Mathf.Sign(point.y))
+                {
+                    targetDirection = intersections[1];
+                }
 
+                Debug.Log("Target Direction: " + targetDirection);
                 // calculate the distance ratio
                 float distanceFromCenter = CalculateDistanceBetweeinTwoPoints(Vector2.zero, targetDirection);
                 float innerRatio = distanceFromCenter / minRadius;
