@@ -100,44 +100,13 @@ public class MapGenByRadius : MonoBehaviour
             // if the point is within the inner circle
             if (IsPointWithinCircle(minRadius, point))
             {
-                Debug.Log("Original Point: " + point);
-                // find the slope of the line that connects the point to the center of the map (0,0)
-                // since center point is always 0,0 then we can assume that the slope is always rise / run or y / x
-                float slope = point.y / point.x;
-                // line then defined by the equation point.y = slope * point.x
-
-                // to get point on the outter circle to ensure that the line intersects, use that equation to then get the point
-                float y = slope * (maxRadius + 1);
-                // define the outter point
-                Vector2 outterPoint = new Vector2(maxRadius + 1, y);
-
-                // Calculate the point where the the line intersects with the edge of the inner circle
-                float deltax = point.x - outterPoint.x;
-                float deltay = point.y - outterPoint.y;
-                float deltar = Mathf.Sqrt((deltax * deltax) + (deltay * deltay));
-                float deltap = (point.x * outterPoint.y) - (outterPoint.x * point.y);
-
-                // Get the distance from the intersections to the random point that was created
-                // The shortest distance is the direction we need to move the point
-                Vector2[] intersections = CalculatePointsUsingDeltas(deltax, deltay, deltar, deltap, minRadius);
-
-                // set the direction vector based on shortest distance
-                Vector2 targetDirection = intersections[0];
-                if((int)Mathf.Sign(intersections[1].x) == (int)Mathf.Sign(point.x) 
-                    && (int)Mathf.Sign(intersections[1].y) == (int)Mathf.Sign(point.y))
-                {
-                    targetDirection = intersections[1];
-                }
-
-                Debug.Log("Target Direction: " + targetDirection);
+                Vector2 direction = point - Vector2.zero;
                 // calculate the distance ratio
-                float distanceFromCenter = CalculateDistanceBetweeinTwoPoints(Vector2.zero, targetDirection);
+                float distanceFromCenter = CalculateDistanceBetweeinTwoPoints(Vector2.zero, direction);
                 float innerRatio = distanceFromCenter / minRadius;
+                Vector2 finalDirection = direction + direction.normalized * (innerRatio * (maxRadius - minRadius));
 
-                float newX = minRadius + (innerRatio * (maxRadius - minRadius));
-                float newY = slope * (newX);
-
-                point = new Vector2(newX, newY);
+                point = point + finalDirection;
             }
 
             // need to calculate a random width and height 
