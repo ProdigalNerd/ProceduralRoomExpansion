@@ -5,7 +5,7 @@ using UnityEngine;
 public class MapGenByRadius : MonoBehaviour
 {
     public GameObject parentObject;
-    public GameObject prefab;
+    public TileConfiguration tileConfiguration;
 
     public int minRadius = 5;
     public int maxRadius = 10;
@@ -14,9 +14,13 @@ public class MapGenByRadius : MonoBehaviour
     public int maxRoomWidth = 8;
     public int maxRoomHeight = 8;
 
+    private int[,] grid;
+
     // Start is called before the first frame update
     void Start()
     {
+        grid = new int[maxRadius * 2 + maxRoomWidth, maxRadius * 2 + maxRoomWidth];
+
         int previousRadius = 0;
         for (int radius = minRadius; radius <= maxRadius; radius += radiusStepSize) {
             if(previousRadius == 0)
@@ -30,12 +34,8 @@ public class MapGenByRadius : MonoBehaviour
 
             previousRadius = radius;
         }
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        AddTilesToGrid();
     }
 
     // Use UnityEngine.Random to find a random point within circle
@@ -47,9 +47,7 @@ public class MapGenByRadius : MonoBehaviour
     // calculate the distance between two points
     private float CalculateDistanceBetweeinTwoPoints(Vector2 point1, Vector2 point2)
     {
-        float d = Mathf.Sqrt(Mathf.Pow((point2.x - point1.x), 2) + Mathf.Pow((point2.y - point1.y), 2));
-
-        return d;
+        return Vector2.Distance(point1, point2);
     }
 
     // Mainly used to make sure point is in outer rim and not previous circle
@@ -57,19 +55,29 @@ public class MapGenByRadius : MonoBehaviour
         return ((Mathf.Abs(point.x) * Mathf.Abs(point.x)) + (Mathf.Abs(point.y) * Mathf.Abs(point.y))) < (circleRadius * circleRadius);
     }
 
-    // Create the game object
-    private GameObject CreateQuadAtCoordinate(Vector2 roomLoc, float width, float height)
+    private void UpdateGrid(Vector2 point, float w, float h)
     {
-        GameObject room = Instantiate(prefab, parentObject.transform) as GameObject;
-        room.transform.position = roomLoc;
-        room.transform.localScale += new Vector3(width, height, 0);
-        // room.GetComponent<BoxCollider>().size = new Vector3(width, height, 0.01f);
-        room.transform.SetParent(parentObject.transform);
-        return room;
+        int width = Mathf.RoundToInt(w);
+        int height = Mathf.RoundToInt(h);
+        int posX = Mathf.RoundToInt(point.x) + maxRadius; // add max radius so that the lowest possible coordinate is 0
+        int posY = Mathf.RoundToInt(point.y) + maxRadius; // add max radius so that the lowest possible coordinate is 0
+
+        if (posX >= maxRadius * 2) posX = maxRadius * 2 - 1;
+        if (posY >= maxRadius * 2) posY = maxRadius * 2 - 1;
+        if (posX < 0) posX = 0;
+        if (posY < 0) posY = 0;
+
+        for(int y = posY; y < posY + height; y++)
+        {
+            for(int x = posX; x < posX + width; x++)
+            {
+                grid[x, y] = 1;
+            }
+        }
     }
 
     // Generating inside of the inner-most circle. aka. easy mode.
-    private List<GameObject> GenerateRoomsForInnerCircle(int radius, int numRooms)
+    private void GenerateRoomsForInnerCircle(int radius, int numRooms)
     {
         List<GameObject> rmList = new List<GameObject>();
 
@@ -79,20 +87,12 @@ public class MapGenByRadius : MonoBehaviour
             float w = UnityEngine.Random.Range(1, maxRoomWidth);
             float h = UnityEngine.Random.Range(1, maxRoomHeight);
             Vector2 origin = GetRandomPointInCircle(radius);
-            rmList.Add(CreateQuadAtCoordinate(origin, w, h));
+            UpdateGrid(origin, w, h);
         }
-
-        // Make sure there are no overlaps.
-
-
-        // Return results
-        return rmList;
     }
 
-    private List<GameObject> GenerateRoomsForOutterCircles(int minRadius, int maxRadius, int numRooms)
+    private void GenerateRoomsForOutterCircles(int minRadius, int maxRadius, int numRooms)
     {
-        List<GameObject> rmList = new List<GameObject>();
-
         for(int x = 0; x < numRooms; x++)
         {
             Vector2 point = GetRandomPointInCircle(maxRadius);
@@ -113,36 +113,70 @@ public class MapGenByRadius : MonoBehaviour
             float w = UnityEngine.Random.Range(1, maxRoomWidth);
             float h = UnityEngine.Random.Range(1, maxRoomHeight);
 
-            rmList.Add(CreateQuadAtCoordinate(point, w, h));
+            UpdateGrid(point, w, h);
         }
-
-        // Return results
-        return rmList;
     }
 
-    // To better understand how this works follow this link
-    // http://mathworld.wolfram.com/Circle-LineIntersection.html
-    private Vector2[] CalculatePointsUsingDeltas(float deltax, float deltay, float deltar, float deltap, float radius)
+    private void AddTilesToGrid()
     {
-        int modifier = 1;
-        if (deltay < 0) modifier = -1;
-
-        float xplus, xminus, yplus, yminus;
-
-        // find the x values first
-        xplus = ((deltap * deltay) + (modifier * deltax) * Mathf.Sqrt(((radius * radius) * (deltar * deltar)) - (deltap * deltap))) / (deltar * deltar);
-        xminus = ((deltap * deltay) - (modifier * deltax) * Mathf.Sqrt(((radius * radius) * (deltar * deltar)) - (deltap * deltap))) / (deltar * deltar);
-
-        // find the y values now
-        yplus = ((-1 * deltap * deltax) + Mathf.Abs(deltay) * Mathf.Sqrt(((radius * radius) * (deltar * deltar)) - (deltap * deltap))) / (deltar * deltar);
-        yminus = ((-1 * deltap * deltax) - Mathf.Abs(deltay) * Mathf.Sqrt(((radius * radius) * (deltar * deltar)) - (deltap * deltap))) / (deltar * deltar);
-
-        Vector2[] pointArray =
+        for(int y = 0; y < grid.GetLength(1) - 1; y++)
         {
-            new Vector2(xplus,yplus),
-            new Vector2(xminus,yminus)
-        };
+            for(int x = 0; x < grid.GetLength(0) - 1; x++)
+            {
+                // 1 == dungeon tile, 0 == empty space
+                if(grid[x, y] == 1)
+                {
+                    GameObject randomWall = new GameObject();
 
-        return pointArray;
+                    if(y == 0 || grid[x, y - 1] == 0)
+                    {
+                        // top wall
+                        randomWall = GetRandomObjectFromList(tileConfiguration.topWalls);
+                    }
+                    else if(x == grid.GetLength(0) - 1 || grid[x + 1, y] == 0)
+                    {
+                        // right wall
+                        randomWall = GetRandomObjectFromList(tileConfiguration.rightWalls);
+                    }
+                    else if(y == grid.GetLength(1) - 1 || grid[x, y + 1] == 0)
+                    {
+                        // bottom wall
+                        randomWall = GetRandomObjectFromList(tileConfiguration.bottomWalls);
+                    }
+                    else if(x == 0 || grid[x - 1, y] == 0)
+                    {
+                        // left wall
+                        randomWall = GetRandomObjectFromList(tileConfiguration.leftWalls);
+                    }
+
+                    SceneryObject so = randomWall.GetComponent<SceneryObject>();
+
+                    int offX = 0;
+                    int offY = 0;
+
+                    if (so.direction == SceneryObject.SceneryDirection.Top) offY = so.height - 1;
+                    if (so.direction == SceneryObject.SceneryDirection.Left) offX = so.width - 1;
+
+                    InstantiateObject(randomWall, new Vector2((x + offX) - maxRadius, (y + offY) - maxRadius));
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+    public GameObject GetRandomObjectFromList(List<GameObject> aryObj)
+    {
+        int randomIndex = Mathf.FloorToInt(UnityEngine.Random.Range(0, aryObj.Count));
+        return aryObj[randomIndex];
+    }
+
+    public void InstantiateObject(GameObject obj, Vector2 pos)
+    {
+        GameObject nObj = Instantiate(obj, parentObject.transform) as GameObject;
+        nObj.transform.position = pos;
+        nObj.transform.SetParent(parentObject.transform);
     }
 }
