@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class TileConfiguration : MonoBehaviour
 {
+    // Floors
+    public List<GameObject> floorTiles;
+
     // Walls
     public List<GameObject> topWalls;
     public List<GameObject> rightWalls;

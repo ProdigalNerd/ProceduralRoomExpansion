@@ -11,8 +11,10 @@ public class MapGenByRadius : MonoBehaviour
     public int maxRadius = 10;
     public int radiusStepSize = 5;
     public int roomsPerStep = 10;
-    public int maxRoomWidth = 8;
-    public int maxRoomHeight = 8;
+    public int maxRoomWidth = 12;
+    public int maxRoomHeight = 12;
+    public int minRoomWidth = 5;
+    public int minRoomHeight = 5;
 
     private int[,] grid;
 
@@ -35,7 +37,8 @@ public class MapGenByRadius : MonoBehaviour
             previousRadius = radius;
         }
 
-        AddTilesToGrid();
+        // AddFloorTilesToGrid();
+        // AddWallTilesToGrid();
     }
 
     // Use UnityEngine.Random to find a random point within circle
@@ -55,6 +58,7 @@ public class MapGenByRadius : MonoBehaviour
         return ((Mathf.Abs(point.x) * Mathf.Abs(point.x)) + (Mathf.Abs(point.y) * Mathf.Abs(point.y))) < (circleRadius * circleRadius);
     }
 
+    // activate nodes that will have graphic tiles placed on them
     private void UpdateGrid(Vector2 point, float w, float h)
     {
         int width = Mathf.RoundToInt(w);
@@ -86,25 +90,29 @@ public class MapGenByRadius : MonoBehaviour
             // need to calculate a random width and height 
             float w = UnityEngine.Random.Range(1, maxRoomWidth);
             float h = UnityEngine.Random.Range(1, maxRoomHeight);
-            Vector2 origin = GetRandomPointInCircle(radius);
-            UpdateGrid(origin, w, h);
+
+            if (w >= minRoomWidth && h >= minRoomHeight)
+            {
+                Vector2 origin = GetRandomPointInCircle(radius);
+                UpdateGrid(origin, w, h);
+            }
         }
     }
 
-    private void GenerateRoomsForOutterCircles(int minRadius, int maxRadius, int numRooms)
+    private void GenerateRoomsForOutterCircles(int prevRadius, int nextRadius, int numRooms)
     {
         for(int x = 0; x < numRooms; x++)
         {
-            Vector2 point = GetRandomPointInCircle(maxRadius);
+            Vector2 point = GetRandomPointInCircle(nextRadius);
 
             // if the point is within the inner circle
-            if (IsPointWithinCircle(minRadius, point))
+            if (IsPointWithinCircle(prevRadius, point))
             {
                 Vector2 direction = point - Vector2.zero;
                 // calculate the distance ratio
                 float distanceFromCenter = CalculateDistanceBetweeinTwoPoints(Vector2.zero, direction);
-                float innerRatio = distanceFromCenter / minRadius;
-                Vector2 finalDirection = direction + direction.normalized * (innerRatio * (maxRadius - minRadius));
+                float innerRatio = distanceFromCenter / prevRadius;
+                Vector2 finalDirection = direction + direction.normalized * (innerRatio * (nextRadius - prevRadius));
 
                 point = point + finalDirection;
             }
@@ -113,70 +121,101 @@ public class MapGenByRadius : MonoBehaviour
             float w = UnityEngine.Random.Range(1, maxRoomWidth);
             float h = UnityEngine.Random.Range(1, maxRoomHeight);
 
-            UpdateGrid(point, w, h);
+            if (w >= minRoomWidth && h >= minRoomHeight)
+            {
+                UpdateGrid(point, w, h);
+            }
         }
     }
 
-    private void AddTilesToGrid()
+    private void AddFloorTilesToGrid()
     {
-        for(int y = 0; y < grid.GetLength(1) - 1; y++)
+        for(int y = 0; y < grid.GetLength(1); y++)
         {
-            for(int x = 0; x < grid.GetLength(0) - 1; x++)
+            for(int x = 0; x < grid.GetLength(0); x++)
             {
                 // 1 == dungeon tile, 0 == empty space
                 if(grid[x, y] == 1)
                 {
-                    GameObject randomWall = new GameObject();
-
-                    if(y == 0 || grid[x, y - 1] == 0)
-                    {
-                        // top wall
-                        randomWall = GetRandomObjectFromList(tileConfiguration.topWalls);
-                    }
-                    else if(x == grid.GetLength(0) - 1 || grid[x + 1, y] == 0)
-                    {
-                        // right wall
-                        randomWall = GetRandomObjectFromList(tileConfiguration.rightWalls);
-                    }
-                    else if(y == grid.GetLength(1) - 1 || grid[x, y + 1] == 0)
-                    {
-                        // bottom wall
-                        randomWall = GetRandomObjectFromList(tileConfiguration.bottomWalls);
-                    }
-                    else if(x == 0 || grid[x - 1, y] == 0)
-                    {
-                        // left wall
-                        randomWall = GetRandomObjectFromList(tileConfiguration.leftWalls);
-                    }
-
-                    SceneryObject so = randomWall.GetComponent<SceneryObject>();
-
-                    int offX = 0;
-                    int offY = 0;
-
-                    if (so.direction == SceneryObject.SceneryDirection.Top) offY = so.height - 1;
-                    if (so.direction == SceneryObject.SceneryDirection.Left) offX = so.width - 1;
-
-                    InstantiateObject(randomWall, new Vector2((x + offX) - maxRadius, (y + offY) - maxRadius));
-                }
-                else
-                {
+                    InstantiateObject(GetRandomObjectFromList(tileConfiguration.floorTiles), new Vector2(x - maxRadius, y - maxRadius));
 
                 }
             }
         }
     }
 
-    public GameObject GetRandomObjectFromList(List<GameObject> aryObj)
+    private void AddWallTilesToGrid()
     {
-        int randomIndex = Mathf.FloorToInt(UnityEngine.Random.Range(0, aryObj.Count));
+        for(int y = 0; y < grid.GetLength(1) - 1; y++)
+        {
+            for (int x = 0; x < grid.GetLength(0) - 1; x++)
+            {
+                if (grid[x, y] == 1)
+                {
+                    // Check for bottom wall
+                    if (y == 0
+                        || (y == 1 && grid[x, y - 1] == 0)
+                        || (y >= 2 && grid[x, y - 1] == 0 && grid[x, y - 2] == 0))
+                    {
+                        InstantiateWall(GetRandomObjectFromList(tileConfiguration.bottomWalls), x, y - 1);
+                    }
+
+                    // Check for left wall on the edge of the map
+                    if (x == 0
+                        || (x == 1 && grid[x - 1, y] == 0)
+                        || (x >= 2 && grid[x - 1, y] == 0 && grid[x - 2, y] == 0))
+                    {
+                        InstantiateWall(GetRandomObjectFromList(tileConfiguration.leftWalls), x - 3, y);
+                    }
+
+                    // Check for right wall on the edge of the map
+                    if (x == grid.GetLength(0) - 1
+                        || (x == grid.GetLength(0) - 2 && grid[x + 1, y] == 0)
+                        || (x <= grid.GetLength(0) - 3 && grid[x + 2, y] == 0 && grid[x + 1, y] == 0))
+                    {
+                        InstantiateWall(GetRandomObjectFromList(tileConfiguration.rightWalls), x + 1, y);
+                    }
+
+                    // Check for top wall on the edge of the map
+                    if (y == grid.GetLength(1) - 1
+                        || (y == grid.GetLength(1) - 2 && grid[x, y + 1] == 0)
+                        || (y <= grid.GetLength(1) - 3 && grid[x, y + 2] == 0 && grid[x, y + 1] == 0))
+                    {
+                        InstantiateWall(GetRandomObjectFromList(tileConfiguration.topWalls), x, y + 1);
+                    }
+                }
+            }
+        }
+    }
+
+    private void AddTilesToGrid()
+    {
+
+    }
+
+    private GameObject GetRandomObjectFromList(List<GameObject> aryObj)
+    {
+        int randomIndex = Mathf.RoundToInt(UnityEngine.Random.Range(0, aryObj.Count - 1));
         return aryObj[randomIndex];
     }
 
-    public void InstantiateObject(GameObject obj, Vector2 pos)
+    private void InstantiateObject(GameObject obj, Vector2 pos)
     {
         GameObject nObj = Instantiate(obj, parentObject.transform) as GameObject;
         nObj.transform.position = pos;
         nObj.transform.SetParent(parentObject.transform);
+    }
+
+    private void InstantiateWall(GameObject obj, int x, int y)
+    {
+        SceneryObject so = obj.GetComponent<SceneryObject>();
+
+        int offX = 0;
+        int offY = 0;
+
+        if (so.direction == SceneryObject.SceneryDirection.Top) offY = so.height - 1;
+        if (so.direction == SceneryObject.SceneryDirection.Left) offX = so.width - 1;
+
+        InstantiateObject(obj, new Vector2((x + offX) - maxRadius, (y + offY) - maxRadius));
     }
 }

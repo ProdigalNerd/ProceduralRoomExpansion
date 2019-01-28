@@ -141,6 +141,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbd8bc704c7cf43e5bdcb75fe71edbcb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  floorTiles:
+  - {fileID: 4667557177429995433, guid: 1ff45e6b2843e4af9865d91e4dcb9851, type: 3}
+  - {fileID: 8851466561713517784, guid: c4ddb7bb2445142bda6537d093d908e2, type: 3}
+  - {fileID: 5845980889112906295, guid: b171016d7c984446da07e83efbdd5d28, type: 3}
+  - {fileID: 5845980889112906295, guid: b171016d7c984446da07e83efbdd5d28, type: 3}
+  - {fileID: 5845980889112906295, guid: b171016d7c984446da07e83efbdd5d28, type: 3}
+  - {fileID: 1626776923604243091, guid: cfccccd01affc48a99b4e4b0d99697ff, type: 3}
   topWalls:
   - {fileID: 1544884592369526, guid: c2317b77416bd4d45b75c34db1016de3, type: 3}
   - {fileID: 1323510211925270, guid: 2967b75438f17fa428aa2ed529552b6c, type: 3}
@@ -385,6 +392,8 @@ MonoBehaviour:
   roomsPerStep: 20
   maxRoomWidth: 8
   maxRoomHeight: 8
+  minRoomWidth: 3
+  minRoomHeight: 3
 --- !u!4 &1894102200
 Transform:
   m_ObjectHideFlags: 0
